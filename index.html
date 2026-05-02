@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Song Selector</title>
+    <style>
+        html,
+        body {
+            height: 100%;
+            margin: 0;
+        }
+
+        body {
+            font-family: sans-serif;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            box-sizing: border-box;
+        }
+
+        #search {
+            width: 100%;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            font-size: 1rem;
+            box-sizing: border-box;
+        }
+
+        #songs {
+            flex: 1;
+            overflow-y: auto;
+            border: 1px solid #ddd;
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        #songs label {
+            display: block;
+            padding: 0.3rem 0;
+        }
+
+        #save {
+            padding: 0.5rem 1.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+
+        #error {
+            color: red;
+        }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+</head>
+
+<body>
+    <h1>Song Selector</h1>
+    <input id="search" type="text" placeholder="Search songs…">
+    <div id="error"></div>
+    <div id="songs"></div>
+    <button id="save">Save TOML</button>
+
+    <script type="module">
+        import TOML from 'https://cdn.jsdelivr.net/npm/smol-toml/dist/index.js';
+        let songs = [];
+
+        function parseCSV(text) {
+            const result = Papa.parse(text, { header: true, skipEmptyLines: true, transformHeader: h => h.trim().toLowerCase() });
+            return result.data;
+        }
+
+        function render(filter = '') {
+            const container = document.getElementById('songs');
+            const lower = filter.toLowerCase();
+            container.innerHTML = songs.map((s, i) => {
+                const text = `${s._source}: ${s.title} – ${s.artist} (${s.year})`;
+                if (lower && !text.toLowerCase().includes(lower)) return '';
+                return `<label><input type="checkbox" value="${i}" ${s._checked ? 'checked' : ''}> ${text}</label>`;
+            }).join('');
+        }
+
+        function buildLink(source, index) {
+            const codes = source.split('-'); // countryCode and gameCode
+            let path = `${codes[0]}`;
+            if (codes[1]) { path += '/' + codes[1]; }
+            return `www.hitstergame.com/${path}/${String(index).padStart(5, '0')}`
+        }
+
+        document.getElementById('search').addEventListener('input', e => render(e.target.value));
+
+        document.getElementById('songs').addEventListener('change', e => {
+            if (e.target.type === 'checkbox') {
+                songs[e.target.value]._checked = e.target.checked;
+            }
+        });
+
+        document.getElementById('save').addEventListener('click', () => {
+            const selected = songs
+                .map((s, i) => s._checked ? i : null)
+                .filter(i => i !== null);
+            const data = { songs: selected.map(i => ({ title: songs[i].title, artist: songs[i].artist, year: parseInt(songs[i].year), link: buildLink(songs[i]._source, songs[i]['card#']) })) };
+            const toml = TOML.stringify(data);
+            const blob = new Blob([toml], { type: 'application/toml' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'selected.toml';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        });
+
+        const csvUrls = [
+            'https://raw.githubusercontent.com/andygruber/songseeker-hitster-playlists/main/hitster-de.csv',
+            'https://raw.githubusercontent.com/andygruber/songseeker-hitster-playlists/main/hitster-ca-aaad0001.csv',
+            'https://raw.githubusercontent.com/andygruber/songseeker-hitster-playlists/main/hitster-de-aaaa0007.csv',
+            'https://raw.githubusercontent.com/andygruber/songseeker-hitster-playlists/main/hitster-de-aaaa0012.csv',
+            'https://raw.githubusercontent.com/andygruber/songseeker-hitster-playlists/main/hitster-de-aaaa0015.csv',
+            'https://raw.githubusercontent.com/andygruber/songseeker-hitster-playlists/main/hitster-de-aaaa0019.csv',
+            'https://raw.githubusercontent.com/andygruber/songseeker-hitster-playlists/main/hitster-de-aaaa0025.csv',
+            'https://raw.githubusercontent.com/andygruber/songseeker-hitster-playlists/main/hitster-de-aaaa0026.csv',
+            'https://raw.githubusercontent.com/andygruber/songseeker-hitster-playlists/main/hitster-de-aaaa0039.csv',
+            'https://raw.githubusercontent.com/andygruber/songseeker-hitster-playlists/main/hitster-de-aaaa0040.csv',
+            'https://raw.githubusercontent.com/andygruber/songseeker-hitster-playlists/main/hitster-de-aaaa0042.csv',
+            'https://raw.githubusercontent.com/andygruber/songseeker-hitster-playlists/main/hitster-de-aaaa0054.csv',
+            'https://raw.githubusercontent.com/andygruber/songseeker-hitster-playlists/main/hitster-de.csv',
+            'https://raw.githubusercontent.com/andygruber/songseeker-hitster-playlists/main/hitster-fr-aaaa0031.csv',
+            'https://raw.githubusercontent.com/andygruber/songseeker-hitster-playlists/main/hitster-fr.csv',
+            'https://raw.githubusercontent.com/andygruber/songseeker-hitster-playlists/main/hitster-hu-aaae0003.csv',
+            'https://raw.githubusercontent.com/andygruber/songseeker-hitster-playlists/main/hitster-nl.csv',
+            // 'https://raw.githubusercontent.com/andygruber/songseeker-hitster-playlists/main/hitster-nordics.csv',
+            // not working as it uses direct spotify links
+            'https://raw.githubusercontent.com/andygruber/songseeker-hitster-playlists/main/hitster-pl-aaae0001.csv',
+            'https://raw.githubusercontent.com/andygruber/songseeker-hitster-playlists/main/hitster-pl-aaae0004.csv',
+        ];
+
+        Promise.all(csvUrls.map(url => fetch(url).then(r => { if (!r.ok) throw new Error(`${url}: ${r.status}`); return r.text(); }).then(text => {
+            const filename = url.split('/').pop().replace('hitster-', '').replace('.csv', '');
+            return parseCSV(text).map(song => ({ ...song, _source: filename }));
+        })))
+            .then(results => {
+                songs = results.flat();
+                songs.sort((a, b) => (parseInt(a.year || 0)) - (parseInt(b.year || 0)));
+                render();
+            })
+            .catch(e => document.getElementById('error').textContent = 'Failed to load CSV: ' + e.message);
+    </script>
+</body>
+
+</html>
