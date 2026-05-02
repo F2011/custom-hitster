@@ -1,3 +1,9 @@
+<table><tr>
+<td><img width="350" height="350" alt="card3" src="https://github.com/user-attachments/assets/436c4b70-4940-46b6-be6e-8aa0fd6f7252" /></td>
+<td><img width="350" height="350" alt="card4" src="https://github.com/user-attachments/assets/7ff44772-94da-420b-b058-bc2556f3a2a7" /></td>
+</tr></table>
+
+
 # Requirements
 - [Typst](https://github.com/typst/typst#installation)
 
